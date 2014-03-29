@@ -105,17 +105,7 @@ public class GuiNameChild extends AbstractGui
 
 		else if (guibutton == doneButton)
 		{
-			WorldPropertiesManager manager = MCA.getInstance().playerWorldManagerMap.get(player.getCommandSenderName());
-			
-			//Assign babyName the string that is in the text field, trimmed of whitespace.
-			manager.worldProperties.babyName = babyNameTextField.getText().trim();
-			manager.saveWorldProperties();
-
-			//Check if the player is married to another player.
-			if (manager.worldProperties.playerSpouseID < 0)
-			{
-				MCA.packetPipeline.sendPacketToServer(new Packet(EnumPacketType.BabyInfo, manager));
-			}
+			MCA.packetPipeline.sendPacketToServer(new Packet(EnumPacketType.BabyInfo, babyNameTextField.getText().trim()));
 
 			//Close the GUI
 			mc.displayGuiScreen(null);

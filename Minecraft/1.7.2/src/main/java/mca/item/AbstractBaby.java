@@ -12,13 +12,22 @@ package mca.item;
 import java.util.List;
 
 import mca.core.MCA;
-import mca.core.io.WorldPropertiesManager;
 import mca.core.util.Utility;
+import mca.core.util.object.PlayerProperties;
 import mca.entity.EntityPlayerChild;
+import mca.enums.EnumPacketType;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
+
+import com.radixshock.radixcore.constant.Font;
+import com.radixshock.radixcore.constant.Time;
+import com.radixshock.radixcore.network.Packet;
+
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -58,69 +67,130 @@ public abstract class AbstractBaby extends Item
 	@Override
 	public boolean onItemUse(ItemStack itemStack, EntityPlayer player, World world, int posX, int posY, int posZ, int meta, float xOffset, float yOffset, float zOffset)
 	{
-
 		if (!world.isRemote)
 		{	
-			final WorldPropertiesManager manager = MCA.getInstance().playerWorldManagerMap.get(player.getCommandSenderName());
+			//			final WorldPropertiesManager manager = MCA.getInstance().playerWorldManagerMap.get(player.getCommandSenderName());
+			//
+			//			if (manager.worldProperties.babyReadyToGrow)
+			//			{
+			final EntityPlayerChild entityPlayerChild = new EntityPlayerChild(world, player, itemStack.stackTagCompound.getString("name"), isMale);
+			entityPlayerChild.setLocationAndAngles(posX, posY + 1, posZ, player.rotationYaw, player.rotationPitch);
+			world.spawnEntityInWorld(entityPlayerChild);
+			
+			Utility.removeItemFromPlayer(itemStack, player);
 
-			if (manager.worldProperties.babyReadyToGrow)
-			{
-				final EntityPlayerChild entityPlayerChild = new EntityPlayerChild(world, player, manager.worldProperties.babyName, isMale);
-				entityPlayerChild.setLocationAndAngles(posX, posY + 1, posZ, player.rotationYaw, player.rotationPitch);
-				world.spawnEntityInWorld(entityPlayerChild);
+			//Trigger the achievement
+			player.triggerAchievement(MCA.getInstance().achievementBabyGrowUp);
 
-				Utility.removeItemFromPlayer(itemStack, player);
-				
-				//Trigger the achievement
-				player.triggerAchievement(MCA.getInstance().achievementBabyGrowUp);
+			//Set relevant properties back to their default values so that the player can have another baby.
+			//				manager.worldProperties.babyExists = false;
+			//				manager.worldProperties.babyName = "";
+			//				manager.worldProperties.babyReadyToGrow = false;
+			//				manager.worldProperties.babyIsMale = false;
+			//				manager.worldProperties.minutesBabyExisted = 0;
+			//				manager.saveWorldProperties();
 
-				//Set relevant properties back to their default values so that the player can have another baby.
-				manager.worldProperties.babyExists = false;
-				manager.worldProperties.babyName = "";
-				manager.worldProperties.babyReadyToGrow = false;
-				manager.worldProperties.babyIsMale = false;
-				manager.worldProperties.minutesBabyExisted = 0;
-				manager.saveWorldProperties();
+			//				//Check if married to another player.
+			//				if (manager.worldProperties.playerSpouseID < 0)
+			//				{
+			//					final int spouseID = manager.worldProperties.playerSpouseID;
+			//					final EntityPlayer spouseEntity = MCA.getInstance().getPlayerByID(world, spouseID);
+			//					WorldPropertiesManager spouseManager = null;
+			//
+			//					if (spouseEntity == null)
+			//					{
+			//						//Properties for player will still be loaded when they are not logged in.
+			//						spouseManager = MCA.getInstance().playerWorldManagerMap.get(manager.worldProperties.playerSpouseName);						
+			//					}
+			//
+			//					else
+			//					{
+			//						spouseManager = MCA.getInstance().playerWorldManagerMap.get(spouseEntity.getCommandSenderName());
+			//					}
+			//
+			//					spouseManager.worldProperties.babyExists = false;
+			//					spouseManager.worldProperties.babyName = "";
+			//					spouseManager.worldProperties.babyReadyToGrow = false;
+			//					spouseManager.worldProperties.babyIsMale = false;
+			//					spouseManager.worldProperties.minutesBabyExisted = 0;
+			//					spouseManager.saveWorldProperties();
+			//				}
 
-				//Check if married to another player.
-				if (manager.worldProperties.playerSpouseID < 0)
-				{
-					final int spouseID = manager.worldProperties.playerSpouseID;
-					final EntityPlayer spouseEntity = MCA.getInstance().getPlayerByID(world, spouseID);
-					WorldPropertiesManager spouseManager = null;
-
-					if (spouseEntity == null)
-					{
-						//Properties for player will still be loaded when they are not logged in.
-						spouseManager = MCA.getInstance().playerWorldManagerMap.get(manager.worldProperties.playerSpouseName);						
-					}
-
-					else
-					{
-						spouseManager = MCA.getInstance().playerWorldManagerMap.get(spouseEntity.getCommandSenderName());
-					}
-
-					spouseManager.worldProperties.babyExists = false;
-					spouseManager.worldProperties.babyName = "";
-					spouseManager.worldProperties.babyReadyToGrow = false;
-					spouseManager.worldProperties.babyIsMale = false;
-					spouseManager.worldProperties.minutesBabyExisted = 0;
-					spouseManager.saveWorldProperties();
-				}
-
-				MCA.getInstance().hasNotifiedOfBabyReadyToGrow = false;
-			}
+			//				MCA.getInstance().hasNotifiedOfBabyReadyToGrow = false;
 		}
 
 		return true;
 	}
 
 	@Override
+	public void onUpdate(ItemStack itemStack, World world, Entity entity, int unknownInt, boolean unknownBool)
+	{
+		try
+		{
+			if (!world.isRemote && itemStack.stackTagCompound != null)
+			{
+				final String owner = itemStack.stackTagCompound.getString("owner");
+				final int age = itemStack.stackTagCompound.getInteger("age");
+				final boolean isReadyToGrow = itemStack.stackTagCompound.getBoolean("isReadyToGrow");
+				final boolean hasNotified = itemStack.stackTagCompound.getBoolean("hasNotified");
+				final EntityPlayerMP player = entity instanceof EntityPlayer ? (EntityPlayerMP) entity : (EntityPlayerMP) world.getPlayerEntityByName(owner);
+
+				if (MCA.getInstance().inDebugMode)
+				{
+					itemStack.stackTagCompound.setInteger("age", age + Time.MINUTE);
+				}
+
+				else
+				{
+					itemStack.stackTagCompound.setInteger("age", age + 1);
+				}
+
+				if (age >= MCA.getInstance().getModProperties().babyGrowUpTimeMinutes * Time.MINUTE && !isReadyToGrow && !hasNotified)
+				{
+					itemStack.stackTagCompound.setBoolean("isReadyToGrow", true);
+
+					if (player != null)
+					{
+						MCA.packetPipeline.sendPacketToPlayer(new Packet(EnumPacketType.NotifyPlayer, 0, "notify.baby.readytogrow"), player);
+						itemStack.stackTagCompound.setBoolean("hasNotified", true);
+					}
+				}
+			}
+		}
+
+		catch (Throwable e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	@Override
 	@SideOnly(Side.CLIENT)
 	public void addInformation(ItemStack itemStack, EntityPlayer entityPlayer, List informationList, boolean unknown)
 	{
-		informationList.add(MCA.getInstance().getLanguageLoader().getString("information.baby.line1"));
-		informationList.add(MCA.getInstance().getLanguageLoader().getString("information.baby.line2"));
-		informationList.add(MCA.getInstance().getLanguageLoader().getString("information.baby.line3"));
+		if (itemStack.stackTagCompound != null)
+		{
+			informationList.add(Font.Color.BLUE + itemStack.stackTagCompound.getString("name"));
+			informationList.add(itemStack.stackTagCompound.getString("owner"));
+			informationList.add("Age: " + itemStack.stackTagCompound.getInteger("age") / Time.MINUTE + " minutes.");
+
+			if (itemStack.stackTagCompound.getBoolean("isReadyToGrow"))
+			{
+				informationList.add(Font.Color.GREEN + "Ready to grow.");
+			}
+		}
+
+		else
+		{
+			informationList.add(MCA.getInstance().getLanguageLoader().getString("information.baby.line1"));
+			informationList.add(MCA.getInstance().getLanguageLoader().getString("information.baby.line2"));
+			informationList.add(MCA.getInstance().getLanguageLoader().getString("information.baby.line3"));
+		}
+	}
+
+	@Override
+	public boolean hasEffect(ItemStack itemStack, int pass) 
+	{
+		return itemStack.stackTagCompound != null;
 	}
 }

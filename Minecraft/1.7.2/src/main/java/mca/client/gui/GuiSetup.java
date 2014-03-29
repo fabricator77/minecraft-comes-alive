@@ -11,8 +11,9 @@ package mca.client.gui;
 
 import java.util.Random;
 
+import mca.core.Constants;
 import mca.core.MCA;
-import mca.core.io.WorldPropertiesManager;
+import mca.core.util.object.PlayerProperties;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
@@ -53,9 +54,8 @@ public class GuiSetup extends AbstractGui
 	/** Has this GUI been opened from a librarian? */
 	private boolean viewedFromLibrarian = false;
 
-	/** An instance of the player's world properties manager. */
-	private WorldPropertiesManager manager;
-
+	private PlayerProperties properties;
+	
 	/**
 	 * Constructor
 	 * 
@@ -66,7 +66,7 @@ public class GuiSetup extends AbstractGui
 	{
 		super(player);
 		this.viewedFromLibrarian = viewedFromLibrarian;
-		this.manager = MCA.getInstance().playerWorldManagerMap.get(player.getCommandSenderName());
+		this.properties = (PlayerProperties) player.getExtendedProperties(Constants.EXTENDED_PROPERTIES);
 	}
 
 	@Override
@@ -74,14 +74,14 @@ public class GuiSetup extends AbstractGui
 	{
 		buttonList.clear();
 
-		if (manager.worldProperties.playerGender.equals(""))
+		if (properties.gender.equals(""))
 		{
-			manager.worldProperties.playerGender = "Male";
+			properties.gender = "Male";
 		}
 
-		if (manager.worldProperties.playerName.equals(""))
+		if (properties.customName.equals(""))
 		{
-			manager.worldProperties.playerName = player.getCommandSenderName();
+			properties.customName = player.getCommandSenderName();
 		}
 
 		drawGenderSelectGui();
@@ -163,16 +163,13 @@ public class GuiSetup extends AbstractGui
 				endIndex += 7;
 			}
 
-			manager.worldProperties.genderPreference = hashedPreference.substring(beginIndex, endIndex);
-			manager.saveWorldProperties();
+			properties.genderPreference = hashedPreference.substring(beginIndex, endIndex);
 		}
 
 		catch (Exception e)
 		{
 			MCA.getInstance().getLogger().log(e);
 		}
-
-		manager.saveWorldProperties();
 	}
 
 	@Override
@@ -182,7 +179,7 @@ public class GuiSetup extends AbstractGui
 		{
 			nameTextField.textboxKeyTyped(c, i);
 			String text = nameTextField.getText().trim();
-			manager.worldProperties.playerName = text;
+			properties.customName = text;
 		}
 	}
 
@@ -208,7 +205,7 @@ public class GuiSetup extends AbstractGui
 
 		buttonList.clear();
 
-		buttonList.add(genderButton = new GuiButton(1, width / 2 - 70, height / 2 - 10, 140, 20, MCA.getInstance().getLanguageLoader().getString("gui.button.setup.gender" + manager.worldProperties.playerGender.toLowerCase())));
+		buttonList.add(genderButton = new GuiButton(1, width / 2 - 70, height / 2 - 10, 140, 20, MCA.getInstance().getLanguageLoader().getString("gui.button.setup.gender" + properties.gender.toLowerCase())));
 		buttonList.add(backButton = new GuiButton(10, width / 2 - 190, height / 2 + 85, 65, 20, MCA.getInstance().getLanguageLoader().getString("gui.button.back")));
 		buttonList.add(nextButton = new GuiButton(11, width / 2 + 125, height / 2 + 85, 65, 20, MCA.getInstance().getLanguageLoader().getString("gui.button.next")));
 
@@ -230,7 +227,7 @@ public class GuiSetup extends AbstractGui
 		buttonList.clear();
 
 		nameTextField = new GuiTextField(fontRendererObj, width / 2 - 100, height / 2 - 10, 200, 20);
-		nameTextField.setText(manager.worldProperties.playerName);
+		nameTextField.setText(properties.customName);
 
 		buttonList.add(backButton = new GuiButton(10, width / 2 - 190, height / 2 + 85, 65, 20, MCA.getInstance().getLanguageLoader().getString("gui.button.back")));
 		buttonList.add(nextButton = new GuiButton(11, width / 2 + 125, height / 2 + 85, 65, 20, MCA.getInstance().getLanguageLoader().getString("gui.button.next")));
@@ -260,19 +257,19 @@ public class GuiSetup extends AbstractGui
 		buttonList.add(backButton   = new GuiButton(10, width / 2 - 190, height / 2 + 85, 65, 20, MCA.getInstance().getLanguageLoader().getString("gui.button.back")));
 		buttonList.add(finishButton = new GuiButton(11, width / 2 + 125, height / 2 + 85, 65, 20, MCA.getInstance().getLanguageLoader().getString("gui.button.setup.finish")));
 
-		if (manager.worldProperties.hideSleepingTag) hideTagsButton.displayString = hideTagsButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.yes");
+		if (properties.hideSleepingTag) hideTagsButton.displayString = hideTagsButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.yes");
 		else hideTagsButton.displayString = hideTagsButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.no");
 
-		if (manager.worldProperties.childrenGrowAutomatically) autoGrowChildrenButton.displayString = autoGrowChildrenButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.yes");
+		if (properties.childrenGrowAutomatically) autoGrowChildrenButton.displayString = autoGrowChildrenButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.yes");
 		else autoGrowChildrenButton.displayString = autoGrowChildrenButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.no");
 
 		if (prefersMales) preferenceButton.displayString = preferenceButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.setup.males");
 		else preferenceButton.displayString = preferenceButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.setup.females");
 
-		if (manager.worldProperties.displayMoodParticles) displayMoodParticlesButton.displayString = displayMoodParticlesButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.yes");
+		if (properties.displayMoodParticles) displayMoodParticlesButton.displayString = displayMoodParticlesButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.yes");
 		else displayMoodParticlesButton.displayString = displayMoodParticlesButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.no");
 
-		if (manager.worldProperties.showNameTags) showNameTagsButton.displayString = showNameTagsButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.yes");
+		if (properties.showNameTags) showNameTagsButton.displayString = showNameTagsButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.yes");
 		else showNameTagsButton.displayString = showNameTagsButton.displayString + MCA.getInstance().getLanguageLoader().getString("gui.button.no");
 
 		finishButton.enabled = false;
@@ -287,19 +284,18 @@ public class GuiSetup extends AbstractGui
 	{
 		if (button == genderButton) 
 		{
-			if (manager.worldProperties.playerGender.equals("Male"))
+			if (properties.gender.equals("Male"))
 			{
-				manager.worldProperties.playerGender = "Female";
+				properties.gender = "Female";
 				prefersMales = true;
 			}
 
 			else
 			{
-				manager.worldProperties.playerGender = "Male";
+				properties.gender = "Male";
 				prefersMales = false;
 			}
 
-			manager.saveWorldProperties();
 			drawGenderSelectGui();
 		}
 
@@ -346,21 +342,18 @@ public class GuiSetup extends AbstractGui
 
 		else if (button == finishButton)
 		{
-			manager.saveWorldProperties();	
 			Minecraft.getMinecraft().displayGuiScreen(null);
 		}
 
 		else if (button == hideTagsButton)
 		{
-			manager.worldProperties.hideSleepingTag = !manager.worldProperties.hideSleepingTag;
-			manager.saveWorldProperties();
+			properties.hideSleepingTag = !properties.hideSleepingTag;
 			drawOptionsGui();
 		}
 
 		else if (button == autoGrowChildrenButton)
 		{
-			manager.worldProperties.childrenGrowAutomatically = !manager.worldProperties.childrenGrowAutomatically;
-			manager.saveWorldProperties();
+			properties.childrenGrowAutomatically = !properties.childrenGrowAutomatically;
 			drawOptionsGui();
 		}
 
@@ -372,15 +365,13 @@ public class GuiSetup extends AbstractGui
 
 		else if (button == displayMoodParticlesButton)
 		{
-			manager.worldProperties.displayMoodParticles = !manager.worldProperties.displayMoodParticles;
-			manager.saveWorldProperties();
+			properties.displayMoodParticles = !properties.displayMoodParticles;
 			drawOptionsGui();
 		}
 		
 		else if (button == showNameTagsButton)
 		{
-			manager.worldProperties.showNameTags = !manager.worldProperties.showNameTags;
-			manager.saveWorldProperties();
+			properties.showNameTags = !properties.showNameTags;
 			drawOptionsGui();
 		}
 	}

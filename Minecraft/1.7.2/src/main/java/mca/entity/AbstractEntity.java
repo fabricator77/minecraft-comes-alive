@@ -2203,6 +2203,16 @@ public abstract class AbstractEntity extends AbstractSerializableEntity implemen
 						boolean babyIsMale = Utility.getRandomGender();
 						MCA.packetPipeline.sendPacketToPlayer(new Packet(EnumPacketType.NameBaby, this.getEntityId(), babyIsMale), (EntityPlayerMP)player);
 						
+						ItemStack itemStackBaby = new ItemStack(MCA.getInstance().itemBabyBoy, 1);
+						itemStackBaby.stackTagCompound = new NBTTagCompound();
+						itemStackBaby.stackTagCompound.setString("name", "{NAME}");
+						itemStackBaby.stackTagCompound.setString("owner", player.getCommandSenderName());
+						itemStackBaby.stackTagCompound.setInteger("age", 0);
+						itemStackBaby.stackTagCompound.setBoolean("hasNotified", false);
+						itemStackBaby.stackTagCompound.setBoolean("isReadyToGrow", false);
+						
+						inventory.addItemStackToInventory(itemStackBaby);
+						
 						if (babyIsMale)
 						{
 							player.triggerAchievement(MCA.getInstance().achievementHaveBabyBoy);

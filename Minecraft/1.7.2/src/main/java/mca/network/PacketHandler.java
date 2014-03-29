@@ -54,6 +54,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagString;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
@@ -875,7 +876,8 @@ public final class PacketHandler extends AbstractPacketHandler
 
 		AbstractEntity villager = (AbstractEntity)player.worldObj.getEntityByID(villagerId);
 		AbstractBaby itemBaby = null;
-
+		ItemStack babyStack = null;
+		
 		//Unlock the appropriate achievement.
 		if (babyIsMale)
 		{
@@ -888,16 +890,6 @@ public final class PacketHandler extends AbstractPacketHandler
 			itemBaby = (AbstractBaby)MCA.getInstance().itemBabyGirl;
 			player.triggerAchievement(MCA.getInstance().achievementHaveBabyGirl);
 		}
-
-		//Give the baby to the villager.
-		villager.inventory.addItemStackToInventory(new ItemStack(itemBaby, 1));
-		mod.getPacketPipeline().sendPacketToServer(new Packet(EnumPacketType.SetInventory, villagerId, villager.inventory));
-
-		//Modify the player's world properties manager.
-		final WorldPropertiesManager manager = MCA.getInstance().playerWorldManagerMap.get(player.getCommandSenderName());
-		manager.worldProperties.babyIsMale = babyIsMale;
-		manager.worldProperties.babyExists = true;
-		manager.saveWorldProperties();
 
 		//Make the player choose a name for the baby.
 		player.openGui(MCA.getInstance(), Constants.ID_GUI_NAMECHILD, player.worldObj, (int)player.posX, (int)player.posY, (int)player.posZ);
@@ -1069,17 +1061,7 @@ public final class PacketHandler extends AbstractPacketHandler
 
 	private void handleBabyInfo(Object[] arguments, EntityPlayer player) 
 	{
-		final WorldPropertiesManager receivedManager = (WorldPropertiesManager) arguments[0];
-
-		//Set the player's spouse's manager to have the same baby info.
-		WorldPropertiesManager spouseManager = MCA.getInstance().playerWorldManagerMap.get(receivedManager.worldProperties.playerSpouseName);
-
-		spouseManager.worldProperties.babyExists = receivedManager.worldProperties.babyExists;
-		spouseManager.worldProperties.babyIsMale = receivedManager.worldProperties.babyIsMale;
-		spouseManager.worldProperties.babyName = receivedManager.worldProperties.babyName;
-		spouseManager.worldProperties.babyReadyToGrow = receivedManager.worldProperties.babyReadyToGrow;
-
-		spouseManager.saveWorldProperties();
+		
 	}
 
 	private void handleArrangedMarriageParticles(Object[] arguments, EntityPlayer player) 

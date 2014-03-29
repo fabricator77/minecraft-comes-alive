@@ -24,6 +24,8 @@ public final class Constants
 	/** Users that are allowed to use the dev controls. */
 	public static final String[] PRIVELAGED_USERS = {"WildBamaBoy", "LuvTrumpetStyle"};
 
+	public static final String EXTENDED_PROPERTIES = "MCA";
+	
 	/**
 	 * Array of blocks that cannot be mined by the mining chore.
 	 */

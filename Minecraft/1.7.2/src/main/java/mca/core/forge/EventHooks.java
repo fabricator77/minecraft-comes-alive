@@ -16,6 +16,7 @@ import mca.core.Constants;
 import mca.core.MCA;
 import mca.core.io.WorldPropertiesManager;
 import mca.core.util.Utility;
+import mca.core.util.object.PlayerProperties;
 import mca.entity.AbstractEntity;
 import mca.entity.AbstractSerializableEntity;
 import mca.entity.EntityPlayerChild;
@@ -44,6 +45,7 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.event.entity.EntityEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.player.EntityInteractEvent;
@@ -65,7 +67,7 @@ import cpw.mods.fml.common.gameevent.TickEvent.ServerTickEvent;
 /**
  * Contains methods that perform a function when an event in Minecraft occurs.
  */
-public class EventHooks 
+public class EventHooks
 {
 	/**
 	 * Fired when the player throws an item away.
@@ -318,6 +320,15 @@ public class EventHooks
 		}
 	}
 	
+	@SubscribeEvent
+	public void onEntityConstruct(EntityEvent.EntityConstructing event) 
+	{
+	    if (event.entity instanceof EntityPlayer) 
+	    {
+	        event.entity.registerExtendedProperties(Constants.EXTENDED_PROPERTIES, new PlayerProperties((EntityPlayer) event.entity));
+	    }
+	}
+
 	private void doAddMobTasks(EntityMob mob)
 	{
 		if (mob instanceof EntityEnderman)
